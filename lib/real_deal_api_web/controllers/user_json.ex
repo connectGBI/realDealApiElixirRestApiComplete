@@ -15,7 +15,7 @@ defmodule RealDealApiWeb.UserJSON do
     %{data: data(user)}
   end
 
-  def user(%{user: user}) do
+  def user(%User{} = user) do
     %{
       id: user.id,
       full_name: user.full_name,
@@ -23,6 +23,7 @@ defmodule RealDealApiWeb.UserJSON do
       biography: user.biography
     }
   end
+
 
   defp data(%User{} = user) do
     %{

@@ -4,19 +4,11 @@ defmodule RealDealApiWeb.AccountController do
   alias RealDealApiWeb.{Auth.Guardian, Auth.ErrorResponse}
   alias RealDealApi.{Accounts,Accounts.Account, Users, Users.User}
 
-  plug :is_authorized_account when action in [:update, :delete]
+  import RealDealApiWeb.Auth.AuthorizedPlug
+
+  plug :is_authorized when action in [:update, :delete]
 
   action_fallback RealDealApiWeb.FallbackController
-
-  defp is_authorized_account(conn, _opts) do
-    %{params: %{"account" => params}} = conn
-    account = Accounts.get_account!(params["id"])
-    if conn.assigns.account.id == account.id do
-      conn
-    else
-      raise ErrorResponse.Forbidden
-    end
-  end
 
   def index(conn, _params) do
     accounts = Accounts.list_accounts()
@@ -70,11 +62,19 @@ defmodule RealDealApiWeb.AccountController do
     render(conn, :full_account, account: account)
   end
 
-  def update(conn, %{ "account" => account_params}) do
-    account = Accounts.get_account!(account_params["id"])
+  def current_account(conn, %{}) do
+    conn
+    #|> put_status{:ok}
+    render(conn, :full_account, %{account: conn.assigns.account})
+  end
 
-    with {:ok, %Account{} = account} <- Accounts.update_account(account, account_params) do
-      render(conn, :show, account: account)
+  def update(conn, %{ "current_hash" => current_hash,"account" => account_params}) do
+    case Guardian.validate_password(current_hash, conn.assigns.account.hash_password) do
+       true ->
+          {:ok,account} = Accounts.update_account(conn.assigns.account, account_params)
+          render(conn, :show, account: account)
+        false ->
+          raise ErrorResponse.Unauthorized, message: "Password incorrect."
     end
   end
 

@@ -63,8 +63,6 @@ defmodule RealDealApiWeb.AccountController do
   end
 
   def current_account(conn, %{}) do
-    conn
-    #|> put_status{:ok}
     render(conn, :full_account, %{account: conn.assigns.account})
   end
 
